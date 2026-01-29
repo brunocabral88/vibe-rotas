@@ -1,0 +1,43 @@
+display_information:
+  name: Vibe Rotas
+  description: Manage team rotas with automatic rotation scheduling
+  background_color: "#764ba2"
+  long_description: "Vibe Rotas is a Slack app that helps teams manage rotating schedules (rotas) with automatic notifications. Create rotas with customizable schedules (daily, weekly, biweekly, monthly), assign team members, and let the app handle the rest. Perfect for support rotations, on-call schedules, and any recurring team assignments."
+
+features:
+  app_home:
+    home_tab_enabled: true
+    messages_tab_enabled: false
+    messages_tab_read_only_enabled: false
+  bot_user:
+    display_name: Vibe Rotas
+    always_online: true
+
+oauth_config:
+  redirect_urls:
+    - https://your-domain.com/slack/oauth_redirect
+  scopes:
+    bot:
+      - app_mentions:read
+      - channels:read
+      - chat:write
+      - commands
+      - users:read
+      - team:read
+      - im:history
+      - im:read
+      - im:write
+
+settings:
+  event_subscriptions:
+    request_url: https://your-domain.com/slack/events
+    bot_events:
+      - app_home_opened
+      - app_mention
+      - message.im
+  interactivity:
+    is_enabled: true
+    request_url: https://your-domain.com/slack/events
+  org_deploy_enabled: false
+  socket_mode_enabled: false
+  token_rotation_enabled: false
