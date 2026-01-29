@@ -1,0 +1,53 @@
+version: '3.8'
+
+services:
+  # MongoDB Database
+  mongodb:
+    image: mongo:7.0
+    container_name: vibe-rotas-mongodb-dev
+    restart: unless-stopped
+    environment:
+      MONGO_INITDB_DATABASE: vibe-rotas
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongodb_data_dev:/data/db
+    networks:
+      - vibe-rotas-network-dev
+
+  # Express API Server (Development)
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: vibe-rotas-api-dev
+    restart: unless-stopped
+    ports:
+      - "${PORT:-3000}:3000"
+    environment:
+      - NODE_ENV=development
+      - PORT=3000
+      - MONGODB_URI=mongodb://mongodb:27017/vibe-rotas
+      - SLACK_CLIENT_ID=${SLACK_CLIENT_ID}
+      - SLACK_CLIENT_SECRET=${SLACK_CLIENT_SECRET}
+      - SLACK_SIGNING_SECRET=${SLACK_SIGNING_SECRET}
+      - SLACK_REDIRECT_URI=${SLACK_REDIRECT_URI}
+      - LOG_LEVEL=${LOG_LEVEL:-debug}
+      - RUN_SCHEDULER_ON_START=${RUN_SCHEDULER_ON_START:-false}
+    depends_on:
+      - mongodb
+    volumes:
+      - ./src:/app/src  # Mount source for hot-reload
+      - ./logs:/app/logs
+      - /app/node_modules  # Prevent overwriting node_modules
+    networks:
+      - vibe-rotas-network-dev
+    command: node src/index.js
+
+volumes:
+  mongodb_data_dev:
+    driver: local
+
+networks:
+  vibe-rotas-network-dev:
+    driver: bridge

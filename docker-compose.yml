@@ -14,6 +14,11 @@ services:
       - mongodb_data:/data/db
     networks:
       - vibe-rotas-network
+    healthcheck:
+      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
   # Express API Server
   api:
@@ -21,19 +26,30 @@ services:
     container_name: vibe-rotas-api
     restart: unless-stopped
     ports:
-      - "3000:3000"
+      - "${PORT:-3000}:3000"
     environment:
       - NODE_ENV=production
+      - PORT=3000
       - MONGODB_URI=mongodb://mongodb:27017/vibe-rotas
-    env_file:
-      - .env
+      - SLACK_CLIENT_ID=${SLACK_CLIENT_ID}
+      - SLACK_CLIENT_SECRET=${SLACK_CLIENT_SECRET}
+      - SLACK_SIGNING_SECRET=${SLACK_SIGNING_SECRET}
+      - SLACK_REDIRECT_URI=${SLACK_REDIRECT_URI}
+      - LOG_LEVEL=${LOG_LEVEL:-info}
+      - RUN_SCHEDULER_ON_START=${RUN_SCHEDULER_ON_START:-true}
     depends_on:
-      - mongodb
+      mongodb:
+        condition: service_healthy
     volumes:
-      - ./src:/app/src
       - ./logs:/app/logs
     networks:
       - vibe-rotas-network
+    healthcheck:
+      test: ["CMD", "node", "-e", "require('http').get('http://localhost:3000/health', (r) => {process.exit(r.statusCode === 200 ? 0 : 1)})"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
 
 volumes:
   mongodb_data:
