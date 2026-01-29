@@ -1,0 +1,10 @@
+# Scheduler status
+GET http://localhost:3000/admin/scheduler/status
+
+###
+# Run scheduler
+POST http://localhost:3000/admin/scheduler/run
+
+###
+# Retry scheduler job
+POST http://localhost:3000/admin/scheduler/retry

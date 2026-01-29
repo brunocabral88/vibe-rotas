@@ -1,0 +1,44 @@
+version: '3.8'
+
+services:
+  # MongoDB Database
+  mongodb:
+    image: mongo:7.0
+    container_name: vibe-rotas-mongodb
+    restart: unless-stopped
+    environment:
+      MONGO_INITDB_DATABASE: vibe-rotas
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongodb_data:/data/db
+    networks:
+      - vibe-rotas-network
+
+  # Express API Server
+  api:
+    build: .
+    container_name: vibe-rotas-api
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=production
+      - MONGODB_URI=mongodb://mongodb:27017/vibe-rotas
+    env_file:
+      - .env
+    depends_on:
+      - mongodb
+    volumes:
+      - ./src:/app/src
+      - ./logs:/app/logs
+    networks:
+      - vibe-rotas-network
+
+volumes:
+  mongodb_data:
+    driver: local
+
+networks:
+  vibe-rotas-network:
+    driver: bridge
