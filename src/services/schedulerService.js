@@ -128,13 +128,15 @@ async function processRota(rota) {
     // Create assignment record
     const assignment = await createAssignment(rotaId, workspaceId, userId, channelId, new Date());
 
-    // Send notification
+    // Send notification with skip button
     const messageTs = await sendNotificationWithRetry(
       workspaceId,
       channelId,
       userId,
       rotaName,
-      rota.customMessage
+      rota.customMessage,
+      assignment._id,        // Pass assignment ID for skip button
+      rota.members.length    // Pass member count to determine button visibility
     );
 
     // Mark as notified

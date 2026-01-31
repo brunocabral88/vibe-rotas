@@ -118,6 +118,13 @@ class SlackClient {
     }, true); // Use GET method
   }
 
+  async conversationsHistory(channel, options = {}) {
+    return this.makeRequest('conversations.history', {
+      channel: channel,
+      ...options
+    }, true); // Use GET method
+  }
+
   // Team API
   async teamInfo() {
     return this.makeRequest('team.info', {}, true); // Use GET method

@@ -150,8 +150,15 @@ function renderMessageTemplate(template, userId, rotaName) {
 
 /**
  * Send rota notification to channel
+ * @param {string} workspaceId - Workspace ID
+ * @param {string} channelId - Channel ID
+ * @param {string} userId - User ID to assign
+ * @param {string} rotaName - Name of the rota
+ * @param {Object} customMessage - Optional custom message
+ * @param {string} assignmentId - Assignment ID for skip button
+ * @param {number} memberCount - Number of members in rota (for skip button visibility)
  */
-async function sendRotaNotification(workspaceId, channelId, userId, rotaName, customMessage) {
+async function sendRotaNotification(workspaceId, channelId, userId, rotaName, customMessage, assignmentId = null, memberCount = 1) {
   try {
     const client = await getSlackClient(workspaceId);
 
@@ -189,6 +196,25 @@ async function sendRotaNotification(workspaceId, channelId, userId, rotaName, cu
       blocks.push(renderedCustomMessage);
     }
 
+    // Add skip button if assignment ID provided and rota has more than 1 member
+    if (assignmentId && memberCount > 1) {
+      blocks.push({
+        type: 'actions',
+        elements: [
+          {
+            type: 'button',
+            text: {
+              type: 'plain_text',
+              text: '⏭️ Skip Person',
+              emoji: true
+            },
+            action_id: `skip_person_${assignmentId}`,
+            value: assignmentId
+          }
+        ]
+      });
+    }
+
     // Send message
     const result = await client.chatPostMessage(
       channelId,
@@ -201,7 +227,8 @@ async function sendRotaNotification(workspaceId, channelId, userId, rotaName, cu
       channelId,
       userId,
       rotaName,
-      messageTs: result.ts
+      messageTs: result.ts,
+      hasSkipButton: !!(assignmentId && memberCount > 1)
     });
 
     return result.ts;
@@ -219,12 +246,12 @@ async function sendRotaNotification(workspaceId, channelId, userId, rotaName, cu
 /**
  * Send notification with retry logic
  */
-async function sendNotificationWithRetry(workspaceId, channelId, userId, rotaName, customMessage, maxRetries = 3) {
+async function sendNotificationWithRetry(workspaceId, channelId, userId, rotaName, customMessage, assignmentId = null, memberCount = 1, maxRetries = 3) {
   let lastError;
 
   for (let attempt = 1; attempt <= maxRetries; attempt++) {
     try {
-      const messageTs = await sendRotaNotification(workspaceId, channelId, userId, rotaName, customMessage);
+      const messageTs = await sendRotaNotification(workspaceId, channelId, userId, rotaName, customMessage, assignmentId, memberCount);
       return messageTs;
     } catch (error) {
       lastError = error;

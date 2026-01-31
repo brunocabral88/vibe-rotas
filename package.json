@@ -1,6 +1,6 @@
 {
   "name": "vibe-rotas",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "Slack app for managing team rotas with automatic rotation scheduling",
   "main": "src/index.js",
   "scripts": {

@@ -121,6 +121,22 @@ const handleBlockAction = async (payload) => {
           const rota = await getRotaById(rotaId, team.id);
           await client.viewsOpen(trigger_id, deleteRotaModal(rota));
         }
+      } else if (action.action_id.startsWith('skip_person_')) {
+        // Handle skip person action
+        const { handleSkipPerson } = require('./skipController');
+        const result = await handleSkipPerson(payload);
+
+        if (!result.success) {
+          // Send ephemeral message with error
+          await client.chatPostMessage(
+            payload.channel?.id || payload.container?.channel_id,
+            `❌ ${result.error}`,
+            null,
+            null
+          ).catch(err => {
+            console.error('Failed to send error message:', err);
+          });
+        }
       }
     } catch (error) {
       console.error('Error handling block action:', error);
