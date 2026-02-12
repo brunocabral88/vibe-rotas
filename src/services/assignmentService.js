@@ -158,7 +158,7 @@ function renderMessageTemplate(template, userId, rotaName) {
  * @param {string} assignmentId - Assignment ID for skip button
  * @param {number} memberCount - Number of members in rota (for skip button visibility)
  */
-async function sendRotaNotification(workspaceId, channelId, userId, rotaName, customMessage, assignmentId = null, memberCount = 1) {
+async function sendRotaNotification(workspaceId, channelId, userId, rotaName, customMessage, assignmentId = null, memberCount = 1, awaySuggestion = null) {
   try {
     const client = await getSlackClient(workspaceId);
 
@@ -187,6 +187,20 @@ async function sendRotaNotification(workspaceId, channelId, userId, rotaName, cu
     };
 
     blocks.push(headerBlock);
+
+    if (awaySuggestion?.assignedUserId === userId) {
+      blocks.push({
+        type: 'context',
+        elements: [
+          {
+            type: 'mrkdwn',
+            text: awaySuggestion.allMembersAway
+              ? '⚠️ This assignee appears to be away, and all rota members currently look away in Slack status.'
+              : `⚠️ This assignee appears to be away. Suggested next person: <@${awaySuggestion.suggestedUserId}>. Use ⏭️ Skip Person to reassign.`
+          }
+        ]
+      });
+    }
 
     // Add custom message if provided
     if (customMessage && customMessage.elements && customMessage.elements.length > 0) {
@@ -246,12 +260,31 @@ async function sendRotaNotification(workspaceId, channelId, userId, rotaName, cu
 /**
  * Send notification with retry logic
  */
-async function sendNotificationWithRetry(workspaceId, channelId, userId, rotaName, customMessage, assignmentId = null, memberCount = 1, maxRetries = 3) {
+async function sendNotificationWithRetry(
+  workspaceId,
+  channelId,
+  userId,
+  rotaName,
+  customMessage,
+  assignmentId = null,
+  memberCount = 1,
+  maxRetries = 3,
+  awaySuggestion = null
+) {
   let lastError;
 
   for (let attempt = 1; attempt <= maxRetries; attempt++) {
     try {
-      const messageTs = await sendRotaNotification(workspaceId, channelId, userId, rotaName, customMessage, assignmentId, memberCount);
+      const messageTs = await sendRotaNotification(
+        workspaceId,
+        channelId,
+        userId,
+        rotaName,
+        customMessage,
+        assignmentId,
+        memberCount,
+        awaySuggestion
+      );
       return messageTs;
     } catch (error) {
       lastError = error;

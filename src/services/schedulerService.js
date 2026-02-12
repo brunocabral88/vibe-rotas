@@ -10,11 +10,56 @@ const {
   sendNotificationWithRetry,
   getUnnotifiedAssignments
 } = require('./assignmentService');
+const { getSlackClient } = require('./slackClient');
+const { findAwayMatch } = require('../utils/awayStatusHelper');
 const { schedulerLogger } = require('../utils/logger');
 
 let schedulerTask = null;
 let schedulerRetryTask = null;
 let isRunning = false;
+
+async function buildAwaySuggestion(workspaceId, rota, assignedUserId) {
+  const client = await getSlackClient(workspaceId);
+  const memberProfiles = await Promise.all(rota.members.map(async (memberId) => {
+    const userInfo = await client.usersInfo(memberId);
+    const profile = userInfo.user?.profile || {};
+    const awayMatch = findAwayMatch(profile.status_text, profile.status_emoji);
+
+    return {
+      userId: memberId,
+      isAway: awayMatch.isAway,
+      matchType: awayMatch.matchType,
+      matchValue: awayMatch.matchValue
+    };
+  }));
+
+  const assignedProfile = memberProfiles.find((profile) => profile.userId === assignedUserId);
+  if (!assignedProfile?.isAway) {
+    return null;
+  }
+
+  const assignedIndex = rota.members.findIndex((memberId) => memberId === assignedUserId);
+  const nextIndex = assignedIndex >= 0
+    ? (assignedIndex + 1) % rota.members.length
+    : 0;
+  const nextUserId = rota.members[nextIndex];
+  const allMembersAway = memberProfiles.every((profile) => profile.isAway);
+
+  schedulerLogger.info('Assigned user appears away', {
+    rotaId: rota._id,
+    assignedUserId,
+    matchType: assignedProfile.matchType,
+    matchValue: assignedProfile.matchValue,
+    allMembersAway,
+    suggestedUserId: allMembersAway ? null : nextUserId
+  });
+
+  return {
+    assignedUserId,
+    suggestedUserId: allMembersAway ? null : nextUserId,
+    allMembersAway
+  };
+}
 
 /**
  * Check if rota should execute today (including catch-up for missed executions)
@@ -125,6 +170,8 @@ async function processRota(rota) {
     const { userId, rotaName, channelId } = await getNextAssignment(rotaId, workspaceId);
     schedulerLogger.info('Next assignment determined', { rotaId, userId, channelId });
 
+    const awaySuggestion = await buildAwaySuggestion(workspaceId, rota, userId);
+
     // Create assignment record
     const assignment = await createAssignment(rotaId, workspaceId, userId, channelId, new Date());
 
@@ -136,7 +183,9 @@ async function processRota(rota) {
       rotaName,
       rota.customMessage,
       assignment._id,        // Pass assignment ID for skip button
-      rota.members.length    // Pass member count to determine button visibility
+      rota.members.length,   // Pass member count to determine button visibility
+      3, // Number of retries
+      awaySuggestion
     );
 
     // Mark as notified
