@@ -4,6 +4,12 @@ const { createRotaModal, editRotaModal, deleteRotaModal } = require('../views/bl
 const { publishHomeView } = require('../controllers/eventController');
 const { createRota, getRotaById, updateRota, deleteRota, validateRotaData } = require('../controllers/rotaController');
 
+function refreshHomeViewAsync(userId, teamId) {
+  publishHomeView(userId, teamId).catch((error) => {
+    console.error('Error refreshing home view:', error);
+  });
+}
+
 /**
  * Main event handler for Slack events endpoint
  */
@@ -232,8 +238,7 @@ const handleCreateRotaSubmission = async (view, team, user) => {
   // Create rota
   await createRota(rotaData);
 
-  // Refresh home view
-  await publishHomeView(user.id, team.id);
+  refreshHomeViewAsync(user.id, team.id);
 };
 
 /**
@@ -289,8 +294,7 @@ const handleEditRotaSubmission = async (view, team, user) => {
   // Update rota
   await updateRota(rotaId, team.id, updates);
 
-  // Refresh home view
-  await publishHomeView(user.id, team.id);
+  refreshHomeViewAsync(user.id, team.id);
 };
 
 /**
@@ -302,8 +306,7 @@ const handleDeleteRotaSubmission = async (view, team, user) => {
   // Delete rota (soft delete)
   await deleteRota(rotaId, team.id);
 
-  // Refresh home view
-  await publishHomeView(user.id, team.id);
+  refreshHomeViewAsync(user.id, team.id);
 };
 
 module.exports = {
