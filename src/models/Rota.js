@@ -49,6 +49,11 @@ const rotaSchema = new mongoose.Schema({
       enum: [0, 15, 30, 45],
       default: 0,
       required: true
+    },
+    weekdaysOnly: {
+      type: Boolean,
+      default: false,
+      required: true
     }
   },
   customMessage: {

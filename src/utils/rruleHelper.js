@@ -3,7 +3,7 @@ const { RRule } = require('rrule');
 /**
  * Generate RRULE string from frequency and start date
  */
-function generateRRule(frequency, startDate, timezone = 'UTC') {
+function generateRRule(frequency, startDate, timezone = 'UTC', weekdaysOnly = false) {
   const freq = {
     'DAILY': RRule.DAILY,
     'WEEKLY': RRule.WEEKLY,
@@ -20,6 +20,10 @@ function generateRRule(frequency, startDate, timezone = 'UTC') {
     dtstart: new Date(startDate),
     tzid: timezone
   };
+
+  if (weekdaysOnly) {
+    options.byweekday = [RRule.MO, RRule.TU, RRule.WE, RRule.TH, RRule.FR];
+  }
 
   // For biweekly, set interval to 2
   if (frequency === 'BIWEEKLY') {

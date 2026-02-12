@@ -91,6 +91,7 @@ const homeBlocks = (rotas = [], assignments = {}, userTimezone = 'UTC') => {
       const notificationHour = rota.schedule.notificationHour !== undefined ? rota.schedule.notificationHour : 10;
       const notificationMinute = rota.schedule.notificationMinute !== undefined ? rota.schedule.notificationMinute : 0;
       const rotaTimezone = rota.schedule.timezone || 'UTC';
+      const weekdaysOnlyLabel = rota.schedule.weekdaysOnly ? ' • Weekdays only' : '';
 
       // Convert notification time from UTC to user's timezone for display
       const convertedTime = convertTimezoneForDisplay(
@@ -122,7 +123,7 @@ const homeBlocks = (rotas = [], assignments = {}, userTimezone = 'UTC') => {
         type: 'section',
         text: {
           type: 'mrkdwn',
-          text: `*${rota.name}*\n:busts_in_silhouette: ${rota.members.length} members • <#${rota.channelId}>\n:calendar: ${rota.schedule.frequency} • :alarm_clock: ${timeDisplay}${assigneeText}`
+          text: `*${rota.name}*\n:busts_in_silhouette: ${rota.members.length} members • <#${rota.channelId}>\n:calendar: ${rota.schedule.frequency}${weekdaysOnlyLabel} • :alarm_clock: ${timeDisplay}${assigneeText}`
         },
         accessory: {
           type: 'overflow',
@@ -336,6 +337,28 @@ const createRotaModal = (userTimezone = 'UTC') => {
             type: 'plain_text',
             text: 'Select start date'
           }
+        }
+      },
+      {
+        type: 'input',
+        block_id: 'weekdays_only',
+        optional: true,
+        label: {
+          type: 'plain_text',
+          text: 'Weekdays Only'
+        },
+        element: {
+          type: 'checkboxes',
+          action_id: 'weekdays_only_input',
+          options: [
+            {
+              text: {
+                type: 'plain_text',
+                text: 'Only schedule Monday-Friday'
+              },
+              value: 'true'
+            }
+          ]
         }
       },
       {
@@ -556,6 +579,39 @@ const editRotaModal = (rota, userTimezone = 'UTC') => {
           type: 'datepicker',
           action_id: 'start_date_input',
           initial_date: rota.schedule.startDate.toISOString().split('T')[0]
+        }
+      },
+      {
+        type: 'input',
+        block_id: 'weekdays_only',
+        optional: true,
+        label: {
+          type: 'plain_text',
+          text: 'Weekdays Only'
+        },
+        element: {
+          type: 'checkboxes',
+          action_id: 'weekdays_only_input',
+          options: [
+            {
+              text: {
+                type: 'plain_text',
+                text: 'Only schedule Monday-Friday'
+              },
+              value: 'true'
+            }
+          ],
+          initial_options: rota.schedule.weekdaysOnly
+            ? [
+              {
+                text: {
+                  type: 'plain_text',
+                  text: 'Only schedule Monday-Friday'
+                },
+                value: 'true'
+              }
+            ]
+            : []
         }
       },
       {

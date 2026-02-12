@@ -6,7 +6,7 @@ const { generateRRule } = require('../utils/rruleHelper');
  * Create a new rota
  */
 async function createRota(data) {
-  const { name, workspaceId, channelId, members, frequency, startDate, notificationHour, notificationMinute, timezone, customMessage, createdBy } = data;
+  const { name, workspaceId, channelId, members, frequency, startDate, notificationHour, notificationMinute, weekdaysOnly, timezone, customMessage, createdBy } = data;
 
   // Validation
   if (!name || name.trim().length === 0) {
@@ -41,7 +41,7 @@ async function createRota(data) {
   }
 
   // Generate RRULE
-  const rrule = generateRRule(frequency, startDate, timezone || 'UTC');
+  const rrule = generateRRule(frequency, startDate, timezone || 'UTC', weekdaysOnly !== undefined ? weekdaysOnly : false);
 
   // Create rota
   const rota = new Rota({
@@ -55,7 +55,8 @@ async function createRota(data) {
       startDate: new Date(startDate),
       timezone: timezone || 'UTC',
       notificationHour: notificationHour !== undefined ? notificationHour : 10,
-      notificationMinute: notificationMinute !== undefined ? notificationMinute : 0
+      notificationMinute: notificationMinute !== undefined ? notificationMinute : 0,
+      weekdaysOnly: weekdaysOnly !== undefined ? weekdaysOnly : false
     },
     customMessage: customMessage || null,
     currentIndex: 0,
@@ -133,14 +134,17 @@ async function updateRota(rotaId, workspaceId, updates) {
   }
 
   // Update schedule
-  if (updates.frequency || updates.startDate || updates.notificationHour !== undefined || updates.notificationMinute !== undefined) {
+  if (updates.frequency || updates.startDate || updates.notificationHour !== undefined || updates.notificationMinute !== undefined || updates.weekdaysOnly !== undefined) {
     const frequency = updates.frequency || rota.schedule.frequency;
     const startDate = updates.startDate || rota.schedule.startDate;
     const timezone = updates.timezone || rota.schedule.timezone;
     const notificationHour = updates.notificationHour !== undefined ? updates.notificationHour : rota.schedule.notificationHour;
     const notificationMinute = updates.notificationMinute !== undefined ? updates.notificationMinute : rota.schedule.notificationMinute;
+    const weekdaysOnly = updates.weekdaysOnly !== undefined
+      ? updates.weekdaysOnly
+      : (rota.schedule.weekdaysOnly !== undefined ? rota.schedule.weekdaysOnly : false);
 
-    const rrule = generateRRule(frequency, startDate, timezone);
+    const rrule = generateRRule(frequency, startDate, timezone, weekdaysOnly);
 
     rota.schedule = {
       rrule,
@@ -148,7 +152,8 @@ async function updateRota(rotaId, workspaceId, updates) {
       startDate: new Date(startDate),
       timezone,
       notificationHour,
-      notificationMinute
+      notificationMinute,
+      weekdaysOnly
     };
   }
 
@@ -267,6 +272,10 @@ function validateRotaData(data) {
     if (isNaN(minute) || ![0, 15, 30, 45].includes(minute)) {
       errors.push('Notification minute must be 0, 15, 30, or 45');
     }
+  }
+
+  if (data.weekdaysOnly !== undefined && typeof data.weekdaysOnly !== 'boolean') {
+    errors.push('Weekdays-only setting must be true or false');
   }
 
   return errors;

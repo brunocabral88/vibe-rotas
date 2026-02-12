@@ -161,7 +161,7 @@ const handleViewSubmission = async (payload) => {
     } else if (view.callback_id === 'delete_rota_modal') {
       await handleDeleteRotaSubmission(view, team, user);
     }
-    
+
     // Explicitly return empty response to close the modal
     return null;
   } catch (error) {
@@ -205,6 +205,8 @@ const handleCreateRotaSubmission = async (view, team, user) => {
 
   // Get custom message from rich text input (optional)
   const customMessage = values.custom_message?.message_input?.rich_text_value || null;
+  const weekdaysOnly = (values.weekdays_only?.weekdays_only_input?.selected_options || [])
+    .some(option => option.value === 'true');
 
   const rotaData = {
     name: values.rota_name.name_input.value,
@@ -215,6 +217,7 @@ const handleCreateRotaSubmission = async (view, team, user) => {
     startDate: values.start_date.start_date_input.selected_date,
     notificationHour: utcTime.hour,
     notificationMinute: utcTime.minute,
+    weekdaysOnly,
     timezone: 'UTC',
     customMessage: customMessage,
     createdBy: user.id
@@ -254,6 +257,8 @@ const handleEditRotaSubmission = async (view, team, user) => {
 
   // Get custom message from rich text input if provided
   const customMessage = values.custom_message?.message_input?.rich_text_value;
+  const weekdaysOnly = (values.weekdays_only?.weekdays_only_input?.selected_options || [])
+    .some(option => option.value === 'true');
 
   const updates = {
     name: values.rota_name.name_input.value,
@@ -262,7 +267,8 @@ const handleEditRotaSubmission = async (view, team, user) => {
     frequency: values.frequency_select.frequency_input.selected_option.value,
     startDate: values.start_date.start_date_input.selected_date,
     notificationHour: utcTime.hour,
-    notificationMinute: utcTime.minute
+    notificationMinute: utcTime.minute,
+    weekdaysOnly
   };
 
   // Only update custom message if user provided one
