@@ -8,7 +8,7 @@ const { createRota, getRotaById, updateRota, deleteRota, validateRotaData } = re
  * Main event handler for Slack events endpoint
  */
 const handleSlackEvent = async (req, res) => {
-  const { type, challenge, event } = req.body;
+  const { type, challenge, event, team_id } = req.body;
 
   // Handle URL verification challenge
   if (type === 'url_verification') {
@@ -23,7 +23,7 @@ const handleSlackEvent = async (req, res) => {
     try {
       switch (event.type) {
       case 'app_home_opened':
-        await handleAppHomeOpened(event);
+        await handleAppHomeOpened(event, team_id);
         break;
 
       case 'app_mention':
@@ -161,6 +161,9 @@ const handleViewSubmission = async (payload) => {
     } else if (view.callback_id === 'delete_rota_modal') {
       await handleDeleteRotaSubmission(view, team, user);
     }
+    
+    // Explicitly return empty response to close the modal
+    return null;
   } catch (error) {
     console.error('Error in view submission:', error);
 

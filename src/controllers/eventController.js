@@ -46,10 +46,10 @@ const publishHomeView = async (userId, teamId) => {
   }
 };
 
-const handleAppHomeOpened = async (event) => {
+const handleAppHomeOpened = async (event, teamId) => {
   try {
     if (event.tab === 'home') {
-      await publishHomeView(event.user, event.view.team_id);
+      await publishHomeView(event.user, teamId);
     }
 
     // TODO: Handle other tabs if needed
